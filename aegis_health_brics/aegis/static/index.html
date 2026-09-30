@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AegisHealth BRICS — Smart Health & Supply Chain Resilience Platform</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            950: '#070B13',
+                            900: '#0F172A',
+                            850: '#131D31',
+                            800: '#1E293B',
+                            700: '#334155'
+                        },
+                        cyan: {
+                            450: '#00D8F6',
+                            500: '#06B6D4',
+                            600: '#0891B2'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Leaflet CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body class="bg-[#090D16] text-gray-100 min-h-screen flex flex-col antialiased selection:bg-cyan-500 selection:text-black">
+
+    <!-- Top Header & Navigation Bar -->
+    <header class="sticky top-0 z-40 bg-[#0F172A]/90 backdrop-blur-md border-b border-gray-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+            <!-- Brand -->
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 via-emerald-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+                    <span class="text-xl font-black text-white tracking-tighter">🛡️</span>
+                </div>
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-1.5">
+                            AegisHealth <span class="gradient-text-brics font-extrabold">BRICS</span>
+                        </h1>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-950 text-cyan-300 border border-cyan-800">
+                            Track 3: Resilience
+                        </span>
+                    </div>
+                    <p class="text-[11px] text-gray-400">Federated AI Platform for National-Scale Health Supply Chain Resilience</p>
+                </div>
+            </div>
+
+            <!-- Header Quick Stats & Badges -->
+            <div class="hidden lg:flex items-center space-x-4">
+                <div class="flex items-center space-x-2 bg-gray-900/80 px-3 py-1.5 rounded-lg border border-gray-800">
+                    <span class="text-xs text-gray-400">Resilience Index:</span>
+                    <span id="stat-resilience" class="text-xs font-bold text-emerald-400 font-mono">--</span>
+                </div>
+                <div class="flex items-center space-x-2 bg-gray-900/80 px-3 py-1.5 rounded-lg border border-gray-800">
+                    <span class="text-xs text-gray-400">BRICS Nodes:</span>
+                    <span id="stat-brics-nodes" class="text-xs font-bold text-cyan-400 font-mono">6 Online</span>
+                </div>
+                <span id="critical-alert-badge" class="hidden px-2.5 py-1 rounded-full text-xs font-bold bg-red-950 text-red-300 border border-red-800 pulse-badge-danger">
+                    Critical Stockout
+                </span>
+                <button onclick="triggerOutbreakScenario('reset')" class="px-2.5 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white rounded-lg text-xs font-medium border border-gray-700 transition">
+                    🔄 Reset Baseline
+                </button>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <nav class="border-t border-gray-800/80 bg-[#0B1120]/95 px-4 sm:px-6 lg:px-8">
+            <div class="max-w-7xl mx-auto flex space-x-1 sm:space-x-2 overflow-x-auto py-2 text-xs font-medium scrollbar-none">
+                <button class="nav-tab-btn px-3 py-1.5 rounded-lg border border-cyan-500 bg-cyan-950/60 text-cyan-400 flex items-center space-x-1.5 transition" data-tab="overview">
+                    <span>📡</span><span>Command Radar</span>
+                </button>
+                <button class="nav-tab-btn px-3 py-1.5 rounded-lg border border-transparent text-gray-400 hover:text-white hover:bg-gray-800/50 flex items-center space-x-1.5 transition" data-tab="facilities">
+                    <span>🏥</span><span>PHC Network</span>
+                </button>
+                <button class="nav-tab-btn px-3 py-1.5 rounded-lg border border-transparent text-gray-400 hover:text-white hover:bg-gray-800/50 flex items-center space-x-1.5 transition" data-tab="inventory">
+                    <span>💊</span><span>Smart Inventory</span>
+                </button>
+                <button class="nav-tab-btn px-3 py-1.5 rounded-lg border border-transparent text-gray-400 hover:text-white hover:bg-gray-800/50 flex items-center space-x-1.5 transition" data-tab="forecasting">
+                    <span>📈</span><span>AI Demand Forecast</span>
+                </button>
+                <button class="nav-tab-btn px-3 py-1.5 rounded-lg border border-transparent text-gray-400 hover:text-white hover:bg-gray-800/50 flex items-center space-x-1.5 transition" data-tab="redistribution">
+                    <span>🚚</span><span>Resource Redistribution</span>
+                </button>
+                <button class="nav-tab-btn px-3 py-1.5 rounded-lg border border-transparent text-gray-400 hover:text-white hover:bg-gray-800/50 flex items-center space-x-1.5 transition" data-tab="federated">
+                    <span>🌐</span><span>BRICS Federated AI</span>
+                </button>
+                <button class="nav-tab-btn px-3 py-1.5 rounded-lg border border-transparent text-gray-400 hover:text-white hover:bg-gray-800/50 flex items-center space-x-1.5 transition" data-tab="simulation">
+                    <span>⚡</span><span>Crisis Simulator</span>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- Top National KPI Row (Always Visible) -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3.5 mb-6">
+            <div class="glass-panel p-3.5 rounded-xl border border-gray-800">
+                <div class="text-[11px] text-gray-400 font-medium">Facilities Monitored</div>
+                <div class="text-xl font-extrabold text-white mt-0.5 font-mono" id="stat-facilities">--</div>
+                <div class="text-[10px] text-gray-500 mt-0.5">PHCs &bull; CHCs &bull; District Hospitals</div>
+            </div>
+            <div class="glass-panel p-3.5 rounded-xl border border-gray-800">
+                <div class="text-[11px] text-gray-400 font-medium">Beds Capacity</div>
+                <div class="text-xl font-extrabold text-white mt-0.5 font-mono" id="stat-beds">--</div>
+                <div class="text-[10px] text-cyan-400 mt-0.5" id="stat-bed-rate">--</div>
+            </div>
+            <div class="glass-panel p-3.5 rounded-xl border border-gray-800">
+                <div class="text-[11px] text-gray-400 font-medium">Staffing on Duty</div>
+                <div class="text-base font-bold text-white mt-1 font-mono truncate" id="stat-staff">--</div>
+                <div class="text-[10px] text-emerald-400 mt-0.5">Active Shift Tracking</div>
+            </div>
+            <div class="glass-panel p-3.5 rounded-xl border border-gray-800">
+                <div class="text-[11px] text-gray-400 font-medium">Critical Stockouts (&le;3d)</div>
+                <div class="text-xl font-extrabold text-red-400 mt-0.5 font-mono flex items-center gap-1.5">
+                    <span id="stat-stockouts">--</span>
+                    <span class="text-xs text-red-500">Urgent</span>
+                </div>
+                <div class="text-[10px] text-gray-500 mt-0.5">Automated Rebalancing Active</div>
+            </div>
+        </div>
+
+        <!-- TAB 1: COMMAND RADAR & GEOSPATIAL MAP -->
+        <section id="tab-overview" class="tab-content space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Geospatial Map (2 columns) -->
+                <div class="lg:col-span-2 glass-panel p-4 rounded-2xl border border-gray-800 flex flex-col">
+                    <div class="flex items-center justify-between pb-3 mb-2 border-b border-gray-800">
+                        <div>
+                            <h3 class="font-bold text-sm text-white flex items-center gap-2">
+                                <span>🗺️</span> National PHC Geospatial Intelligence & Logistics Routes
+                            </h3>
+                            <p class="text-xs text-gray-400">Real-time facility status markers and animated cross-district transfer corridors</p>
+                        </div>
+                        <div class="flex items-center space-x-3 text-[11px]">
+                            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-red-500 inline-block pulse-badge-danger"></span> Critical</span>
+                            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span> Warning</span>
+                            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span> Stable</span>
+                        </div>
+                    </div>
+                    <div id="healthMap" class="w-full h-[460px] rounded-xl overflow-hidden border border-gray-800 z-10"></div>
+                </div>
+
+                <!-- Live Early Warning Radar & Alerts Feed (1 column) -->
+                <div class="glass-panel p-4 rounded-2xl border border-gray-800 flex flex-col h-[530px]">
+                    <div class="flex items-center justify-between pb-3 mb-3 border-b border-gray-800">
+                        <div>
+                            <h3 class="font-bold text-sm text-white flex items-center gap-2">
+                                <span>🚨</span> Real-Time Stockout Early Warnings
+                            </h3>
+                            <p class="text-[11px] text-gray-400">Automated triage triggers and escalation</p>
+                        </div>
+                        <button onclick="switchTab('redistribution')" class="px-2.5 py-1 bg-cyan-600 hover:bg-cyan-500 text-white rounded text-xs font-semibold transition">
+                            Resolve All
+                        </button>
+                    </div>
+                    <div id="alertsContainer" class="flex-1 overflow-y-auto pr-1">
+                        <!-- Populated dynamically via app.js -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: PHC NETWORK & FACILITIES DIRECTORY -->
+        <section id="tab-facilities" class="tab-content hidden space-y-4">
+            <!-- Filter Toolbar -->
+            <div class="glass-panel p-4 rounded-xl border border-gray-800 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex-1 min-w-[200px]">
+                    <input type="text" id="facilitySearchInput" oninput="filterFacilities()" placeholder="Search facility name or code (e.g. Avanigadda, PHC-KD-01)..." class="w-full bg-gray-900 border border-gray-700 text-xs text-white rounded-lg px-3 py-2 focus:outline-none focus:border-cyan-500">
+                </div>
+                <div class="flex items-center space-x-2">
+                    <select id="facilityDistrictFilter" onchange="filterFacilities()" class="bg-gray-900 border border-gray-700 text-xs text-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-cyan-500">
+                        <option value="ALL">All Districts</option>
+                        <option value="Krishna Delta">Krishna Delta</option>
+                        <option value="Visakha Agency">Visakha Agency</option>
+                        <option value="Chittoor Highlands">Chittoor Highlands</option>
+                        <option value="Guntur Plains">Guntur Plains</option>
+                        <option value="Kurnool Arid Zone">Kurnool Arid Zone</option>
+                        <option value="Ranga Reddy Fringe">Ranga Reddy Fringe</option>
+                    </select>
+                    <select id="facilityTypeFilter" onchange="filterFacilities()" class="bg-gray-900 border border-gray-700 text-xs text-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-cyan-500">
+                        <option value="ALL">All Tiers</option>
+                        <option value="PHC">Primary Health Centre (PHC)</option>
+                        <option value="CHC">Community Health Centre (CHC)</option>
+                        <option value="DH">District Hospital (DH)</option>
+                    </select>
+                    <select id="facilityStatusFilter" onchange="filterFacilities()" class="bg-gray-900 border border-gray-700 text-xs text-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-cyan-500">
+                        <option value="ALL">All Statuses</option>
+                        <option value="CRITICAL">Critical Vulnerability</option>
+                        <option value="WARNING">Warning</option>
+                        <option value="STABLE">Stable Buffer</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Facilities Grid -->
+            <div id="facilitiesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Injected via app.js -->
+            </div>
+        </section>
+
+        <!-- TAB 3: SMART INVENTORY & COMMODITIES -->
+        <section id="tab-inventory" class="tab-content hidden space-y-4">
+            <div class="glass-panel p-4 rounded-xl border border-gray-800 flex items-center justify-between">
+                <div>
+                    <h3 class="font-bold text-sm text-white">📦 National Medicine & Emergency Commodity Inventory</h3>
+                    <p class="text-xs text-gray-400">Monitoring real-time burn rates, days of runway, cold chain integrity, and batch tracking</p>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span class="text-xs text-gray-400">Triage:</span>
+                    <span class="px-2 py-0.5 rounded text-[11px] bg-red-950 text-red-300 border border-red-800 font-bold">&le; 3d Critical</span>
+                    <span class="px-2 py-0.5 rounded text-[11px] bg-amber-950 text-amber-300 border border-amber-800 font-bold">3-7d Warning</span>
+                    <span class="px-2 py-0.5 rounded text-[11px] bg-emerald-950 text-emerald-300 border border-emerald-800 font-bold">7-25d Safe</span>
+                    <span class="px-2 py-0.5 rounded text-[11px] bg-blue-950 text-blue-300 border border-blue-800 font-bold">&gt; 25d Surplus</span>
+                </div>
+            </div>
+
+            <div class="glass-panel rounded-xl border border-gray-800 overflow-hidden">
+                <div class="overflow-x-auto max-h-[620px] overflow-y-auto">
+                    <table class="w-full text-xs text-left">
+                        <thead class="bg-gray-900/90 text-gray-300 sticky top-0 border-b border-gray-800 z-10">
+                            <tr>
+                                <th class="py-3 px-3">Medicine / Commodity</th>
+                                <th class="py-3 px-3">Facility & District</th>
+                                <th class="py-3 px-3 text-right">Current Stock</th>
+                                <th class="py-3 px-3 text-right">Burn Rate</th>
+                                <th class="py-3 px-3 text-center">Runway</th>
+                                <th class="py-3 px-3 text-center">Cold Chain</th>
+                                <th class="py-3 px-3 text-center">Batch ID</th>
+                                <th class="py-3 px-3 text-center">Expiry</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventoryTableBody" class="divide-y divide-gray-800/80">
+                            <!-- Populated via app.js -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: AI DEMAND FORECASTING STUDIO -->
+        <section id="tab-forecasting" class="tab-content hidden space-y-6">
+            <!-- Controls Bar -->
+            <div class="glass-panel p-4 rounded-xl border border-gray-800 flex flex-wrap items-center justify-between gap-4">
+                <div class="flex flex-wrap items-center gap-3">
+                    <div>
+                        <label class="block text-[11px] text-gray-400 mb-1">Select Medicine / Essential Commodity</label>
+                        <select id="forecastMedicineSelect" onchange="loadForecastData()" class="bg-gray-900 border border-gray-700 text-xs text-white rounded-lg px-3 py-2 min-w-[280px] focus:outline-none focus:border-cyan-500">
+                            <!-- Populated via loadMedicineCatalog -->
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] text-gray-400 mb-1">Scope</label>
+                        <select id="forecastFacilitySelect" onchange="loadForecastData()" class="bg-gray-900 border border-gray-700 text-xs text-white rounded-lg px-3 py-2 min-w-[240px] focus:outline-none focus:border-cyan-500">
+                            <option value="NATIONAL_AGGREGATE">National Aggregate (All PHCs)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] text-gray-400 mb-1">Forecast Horizon</label>
+                        <select id="forecastHorizonSelect" onchange="loadForecastData()" class="bg-gray-900 border border-gray-700 text-xs text-white rounded-lg px-3 py-2 focus:outline-none focus:border-cyan-500">
+                            <option value="7">7 Days Horizon</option>
+                            <option value="14" selected>14 Days Horizon</option>
+                            <option value="30">30 Days Horizon</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button onclick="loadForecastData()" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-xs font-semibold shadow transition flex items-center space-x-1.5">
+                    <span>⚡ Recompute ML Forecast</span>
+                </button>
+            </div>
+
+            <!-- Forecast Metric Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="glass-panel p-3.5 rounded-xl border border-gray-800">
+                    <div class="text-[11px] text-gray-400">Projected Demand Growth</div>
+                    <div class="text-xl font-bold text-amber-400 mt-0.5 font-mono" id="forecast-growth-rate">--</div>
+                    <div class="text-[10px] text-gray-500 mt-0.5">Vs rolling 14-day baseline</div>
+                </div>
+                <div class="glass-panel p-3.5 rounded-xl border border-gray-800">
+                    <div class="text-[11px] text-gray-400">Surge Index Multiplier</div>
+                    <div class="text-xl font-bold text-cyan-400 mt-0.5 font-mono" id="forecast-surge-index">--</div>
+                    <div class="text-[10px] text-gray-500 mt-0.5">Epidemic acceleration factor</div>
+                </div>
+                <div class="glass-panel p-3.5 rounded-xl border border-gray-800">
+                    <div class="text-[11px] text-gray-400">Model Confidence (R²)</div>
+                    <div class="text-xl font-bold text-emerald-400 mt-0.5 font-mono" id="forecast-confidence">94%</div>
+                    <div class="text-[10px] text-gray-500 mt-0.5">Cross-validated time series</div>
+                </div>
+                <div class="glass-panel p-3.5 rounded-xl border border-gray-800">
+                    <div class="text-[11px] text-gray-400">AI Risk Assessment</div>
+                    <div class="text-xs font-semibold text-gray-200 mt-1 line-clamp-2" id="forecast-risk-verdict">--</div>
+                </div>
+            </div>
+
+            <!-- Chart Canvas -->
+            <div class="glass-panel p-5 rounded-2xl border border-gray-800">
+                <div class="flex items-center justify-between pb-3 mb-2 border-b border-gray-800">
+                    <h3 class="font-bold text-sm text-white">📊 Predictive Demand Horizon & Confidence Bounds (95% CI)</h3>
+                    <span class="text-xs text-gray-400">Supervised Gradient Boosting with Lag & Weather Features</span>
+                </div>
+                <div class="w-full h-80">
+                    <canvas id="forecastCanvas"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 5: RESOURCE REDISTRIBUTION OPTIMIZER -->
+        <section id="tab-redistribution" class="tab-content hidden space-y-6">
+            <div class="glass-panel p-4 rounded-xl border border-gray-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h3 class="font-bold text-base text-white flex items-center gap-2">
+                        <span>🚚</span> Automated Cross-District Resource Redistribution Optimizer
+                    </h3>
+                    <p class="text-xs text-gray-400 mt-0.5">Algorithmic supply matching from surplus donor facilities to critical deficit PHCs with cold-chain verification</p>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <button onclick="loadRedistributionRecommendations()" class="px-3.5 py-2 bg-gray-800 hover:bg-gray-700 text-cyan-300 rounded-lg text-xs font-semibold border border-cyan-800/60 transition">
+                        🔄 Refresh Recommendations
+                    </button>
+                    <button onclick="autoDispatchAllTransfers()" class="px-4 py-2 bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white rounded-lg text-xs font-bold shadow-lg shadow-emerald-900/30 transition flex items-center space-x-1.5">
+                        <span>⚡ Auto-Dispatch All Emergency Transfers</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Transfer Recommendations Cards -->
+            <div class="space-y-3" id="recommendationsContainer">
+                <!-- Injected via app.js -->
+            </div>
+
+            <!-- Active / Historical Transfer Manifests Table -->
+            <div class="glass-panel p-4 rounded-2xl border border-gray-800">
+                <h4 class="font-bold text-sm text-white mb-3 flex items-center gap-2">
+                    <span>📋</span> Active & In-Transit Transfer Manifests
+                </h4>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs text-left">
+                        <thead class="bg-gray-900 text-gray-400 border-b border-gray-800">
+                            <tr>
+                                <th class="py-2.5 px-3">Manifest ID</th>
+                                <th class="py-2.5 px-3">Item Name</th>
+                                <th class="py-2.5 px-3">Quantity</th>
+                                <th class="py-2.5 px-3">Source (Donor)</th>
+                                <th class="py-2.5 px-3">Destination (Recipient)</th>
+                                <th class="py-2.5 px-3 text-center">Status</th>
+                                <th class="py-2.5 px-3 text-center">Dispatched At</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transfersTableBody" class="divide-y divide-gray-800">
+                            <!-- Populated via app.js -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 6: BRICS FEDERATED AI ALLIANCE -->
+        <section id="tab-federated" class="tab-content hidden space-y-6">
+            <!-- Header Banner -->
+            <div class="glass-panel p-5 rounded-2xl border border-cyan-800/40 bg-gradient-to-r from-cyan-950/30 via-gray-900 to-indigo-950/30 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xl">🌐</span>
+                        <h3 class="font-bold text-base text-white">BRICS Federated Healthcare AI Alliance</h3>
+                    </div>
+                    <p class="text-xs text-gray-300 mt-1 max-w-2xl leading-relaxed">
+                        Privacy-preserving collaborative learning across BRICS health ministries. Nodes train local epidemic forecasting models on sovereign data, exchanging only gradient weights via Federated Averaging (<strong class="text-cyan-300">FedAvg</strong>) with Differential Privacy (<strong class="text-cyan-300">&epsilon;-DP</strong>).
+                    </p>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <button id="btnTriggerFedRound" onclick="triggerFederatedRound()" class="px-5 py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-lg text-xs font-bold shadow-lg shadow-cyan-900/40 transition flex items-center space-x-1.5 whitespace-nowrap">
+                        <span>⚡ Execute FedAvg Round</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Alliance Nodes Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="bricsNodesGrid">
+                <!-- Injected via app.js -->
+            </div>
+
+            <!-- Federated Convergence Chart & Weights -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Convergence Curve -->
+                <div class="lg:col-span-2 glass-panel p-5 rounded-2xl border border-gray-800">
+                    <div class="flex items-center justify-between pb-3 mb-2 border-b border-gray-800">
+                        <div>
+                            <h4 class="font-bold text-sm text-white">Convergence History (Loss Reduction & MAE)</h4>
+                            <p class="text-xs text-gray-400">Demonstrating cross-border generalization without raw data movement</p>
+                        </div>
+                        <div class="text-right text-xs">
+                            <span class="text-gray-400">Current Loss: </span>
+                            <span class="font-bold text-emerald-400 font-mono" id="fed-global-loss">--</span>
+                        </div>
+                    </div>
+                    <div class="w-full h-72">
+                        <canvas id="federatedCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Global Parameters & Privacy Budget -->
+                <div class="glass-panel p-5 rounded-2xl border border-gray-800 flex flex-col justify-between">
+                    <div>
+                        <h4 class="font-bold text-sm text-white mb-2">Sovereign Model Parameters</h4>
+                        <p class="text-xs text-gray-400 mb-3">Aggregated regression weights across all member nations:</p>
+                        <div id="federatedWeightsContainer" class="space-y-1">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-3 border-t border-gray-800">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-gray-400">Privacy Budget Spent:</span>
+                            <span class="font-bold text-cyan-400 font-mono" id="fed-privacy-eps">--</span>
+                        </div>
+                        <div class="mt-2 text-[10px] text-gray-400 bg-gray-900 p-2 rounded border border-gray-800">
+                            🔒 <strong>DP Guarantee:</strong> $(\epsilon, 10^{-5})$-Differential Privacy protects patient confidentiality. Zero PHI/PII records leave sovereign borders.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 7: CRISIS & OUTBREAK SIMULATOR -->
+        <section id="tab-simulation" class="tab-content hidden space-y-6">
+            <div class="glass-panel p-5 rounded-2xl border border-amber-800/40 bg-gradient-to-r from-amber-950/20 via-gray-900 to-rose-950/20">
+                <h3 class="font-bold text-base text-white flex items-center gap-2">
+                    <span>⚡</span> National Healthcare Resilience Stress-Test Sandbox
+                </h3>
+                <p class="text-xs text-gray-300 mt-1 max-w-3xl leading-relaxed">
+                    Trigger simulated real-world health emergencies to test the platform's early warning algorithms, demand surge forecasts, and cross-district automated redistribution under acute pressure.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Scenario 1 -->
+                <div class="glass-panel p-5 rounded-2xl border border-gray-800 hover:border-amber-500/50 transition flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between pb-2 border-b border-gray-800">
+                            <span class="text-xs font-bold text-amber-400 uppercase tracking-wider">Scenario 1 &bull; Vector Surge</span>
+                            <span class="text-xl">🦟</span>
+                        </div>
+                        <h4 class="font-bold text-sm text-white mt-2">Monsoon Dengue & Malaria Epidemic</h4>
+                        <p class="text-xs text-gray-300 mt-1 leading-relaxed">
+                            Simulates post-monsoon water logging across Krishna Delta and Guntur Plains. Daily patient footfall surges by 180%, spiking demand for Normal Saline IV Fluids, Paracetamol, and Dengue RDT kits.
+                        </p>
+                    </div>
+                    <button id="btn-scenario-dengue_surge" onclick="triggerOutbreakScenario('dengue_surge')" class="mt-4 w-full py-2 bg-amber-600/90 hover:bg-amber-500 text-white rounded-lg text-xs font-bold shadow transition">
+                        Trigger Dengue Surge (3.2x Burn Rate)
+                    </button>
+                </div>
+
+                <!-- Scenario 2 -->
+                <div class="glass-panel p-5 rounded-2xl border border-gray-800 hover:border-rose-500/50 transition flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between pb-2 border-b border-gray-800">
+                            <span class="text-xs font-bold text-red-400 uppercase tracking-wider">Scenario 2 &bull; Respiratory Wave</span>
+                            <span class="text-xl">🫁</span>
+                        </div>
+                        <h4 class="font-bold text-sm text-white mt-2">Acute Respiratory Epidemic (Novel Flu Wave)</h4>
+                        <p class="text-xs text-gray-300 mt-1 leading-relaxed">
+                            Simulates sudden viral transmission wave across urban fringe and arid districts. Severe cases strain ICU bed occupancy past 95% and exhaust oxygen cylinder reserves in under 48 hours.
+                        </p>
+                    </div>
+                    <button id="btn-scenario-respiratory_wave" onclick="triggerOutbreakScenario('respiratory_wave')" class="mt-4 w-full py-2 bg-rose-600/90 hover:bg-rose-500 text-white rounded-lg text-xs font-bold shadow transition">
+                        Trigger Respiratory Wave (96% ICU Stress)
+                    </button>
+                </div>
+
+                <!-- Scenario 3 -->
+                <div class="glass-panel p-5 rounded-2xl border border-gray-800 hover:border-blue-500/50 transition flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between pb-2 border-b border-gray-800">
+                            <span class="text-xs font-bold text-blue-400 uppercase tracking-wider">Scenario 3 &bull; Infrastructure Cut</span>
+                            <span class="text-xl">🌊</span>
+                        </div>
+                        <h4 class="font-bold text-sm text-white mt-2">Coastal Flash Flooding & Logistics Severance</h4>
+                        <p class="text-xs text-gray-300 mt-1 leading-relaxed">
+                            Cyclonic depression washes out arterial coastal highways in Visakha Agency. Weekly warehouse resupply halted for 72h. Tests automated cross-district rerouting from inland highlands.
+                        </p>
+                    </div>
+                    <button id="btn-scenario-flood_disruption" onclick="triggerOutbreakScenario('flood_disruption')" class="mt-4 w-full py-2 bg-blue-600/90 hover:bg-blue-500 text-white rounded-lg text-xs font-bold shadow transition">
+                        Trigger Coastal Flood Logistics Severance
+                    </button>
+                </div>
+
+                <!-- Scenario 4 -->
+                <div class="glass-panel p-5 rounded-2xl border border-gray-800 hover:border-cyan-500/50 transition flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between pb-2 border-b border-gray-800">
+                            <span class="text-xs font-bold text-cyan-400 uppercase tracking-wider">Scenario 4 &bull; BRICS Signal</span>
+                            <span class="text-xl">🇧🇷 🇮🇳</span>
+                        </div>
+                        <h4 class="font-bold text-sm text-white mt-2">BRICS Federated Early Outbreak Signal</h4>
+                        <p class="text-xs text-gray-300 mt-1 leading-relaxed">
+                            Telemetry and model weight updates from Fiocruz (Brazil) and NICD (South Africa) detect emerging viral mutations 18 days prior to domestic case spikes, triggering proactive buffer building.
+                        </p>
+                    </div>
+                    <button id="btn-scenario-brics_cross_border" onclick="triggerOutbreakScenario('brics_cross_border')" class="mt-4 w-full py-2 bg-cyan-600/90 hover:bg-cyan-500 text-white rounded-lg text-xs font-bold shadow transition">
+                        Trigger BRICS Cross-Border Warning
+                    </button>
+                </div>
+            </div>
+
+            <!-- Reset Button Card -->
+            <div class="glass-panel p-4 rounded-xl border border-gray-800 flex items-center justify-between">
+                <div>
+                    <h4 class="font-bold text-sm text-white">Reset Simulation Environment</h4>
+                    <p class="text-xs text-gray-400">Restore all inventories, staffing attendance, and bed metrics back to standard baseline</p>
+                </div>
+                <button onclick="triggerOutbreakScenario('reset')" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded-lg text-xs font-semibold border border-gray-700 transition">
+                    🔄 Reset Baseline System State
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Facility Detail Deep-Dive Modal -->
+    <div id="facilityModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div class="glass-panel w-full max-w-2xl rounded-2xl border border-gray-700 shadow-2xl p-6 relative max-h-[90vh] overflow-y-auto" id="facilityModalContent">
+            <!-- Injected via app.js -->
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col items-end pointer-events-auto"></div>
+
+    <!-- Scripts -->
+    <script src="/static/js/charts.js"></script>
+    <script src="/static/js/map.js"></script>
+    <script src="/static/js/simulation.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
